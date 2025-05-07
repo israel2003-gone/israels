@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background: #e5ddd5;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 800px; /* Increased width */
+            margin: 0 auto;
+            background: #f0f0f0;
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+        }
+
+        .chat-window {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 80%; /* Adjusted for better width */
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            color: #000;
+        }
+
+        .screen-message {
+            align-self: flex-start;
+            background-color: #fff;
+            color: #000;
+            border: 1px solid #ddd;
+        }
+
+        .message img, .message video {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .input-area button {
+            margin-left: 10px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .send-button {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .clear-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar Styling */
+        .chat-window::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-window::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .chat-window::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @media screen and (max-width: 600px) {
+            .chat-container {
+                border: none;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-window" id="chatScreen">
+        {% for message in left_messages %}
+            <div class="message {{ message.type }}">
+                {{ message.text|safe }}
+                {% if message.image %}
+                    <img src="{{ url_for('static', filename=message.image) }}" alt="Image">
+                {% endif %}
+                {% if message.video %}
+                    <video controls>
+                        <source src="{{ url_for('static', filename=message.video) }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="input-area">
+        <form method="post" style="display: flex; width: 100%;">
+            <input type="text" name="user_input" placeholder="Type a message..." required autocomplete="off">
+            <button type="submit" class="send-button">Send</button>
+        </form>
+        <form method="post" action="{{ url_for('clear_messages') }}">
+            <button type="submit" class="clear-button">Clear</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatScreen = document.getElementById('chatScreen');
+
+        function scrollToBottom() {
+            chatScreen.scrollTop = chatScreen.scrollHeight;
+        }
+
+        const mediaElements = chatScreen.querySelectorAll('img, video');
+        let loadedCount = 0;
+
+        if (mediaElements.length === 0) {
+            scrollToBottom();
+        } else {
+            mediaElements.forEach(media => {
+                if (media.tagName === 'IMG') {
+                    if (media.complete) {
+                        loadedCount++;
+                    } else {
+                        media.addEventListener('load', () => {
+                            loadedCount++;
+                            if (loadedCount === mediaElements.length) {
+                                scrollToBottom();
+                            }
+                        });
+                    }
+                } else if (media.tagName === 'VIDEO') {
+                    // Use 'canplaythrough' to ensure video is playable
+                    if (media.readyState >= 4) {
+                        loadedCount++;
+                    } else {
+                        media.addEventListener('canplaythrough', () => {
+                            loadedCount++;
+                            if (loadedCount === mediaElements.length) {
+                                scrollToBottom();
+                            }
+                        });
+                    }
+                }
+            });
+
+            if (loadedCount === mediaElements.length) {
+                scrollToBottom();
+            }
+        }
+    });
+</script>
+
+
+</body>
+</html>

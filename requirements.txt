@@ -1,0 +1,6 @@
+flask
+nltk
+spacy
+fuzzywuzzy
+scikit-learn
+python-Levenshtein
